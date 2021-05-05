@@ -1,0 +1,73 @@
+import React, { useContext, useState, useEffect } from "react";
+import MainContext from "./MainContext";
+import { GrLink, GrDownload, GrClose } from "react-icons/gr";
+import { Link } from "react-router-dom";
+
+const Downland = () => {
+  const { selectedBrands, brands, setSelectedBrands } = useContext(MainContext);
+  const [downloadUrl, setDownloadUrl] = useState();
+  const [cssMethod, setCssMethod] = useState("css");
+
+  useEffect(() => {
+    if (selectedBrands.length > 0) {
+      let output = "";
+      switch (cssMethod) {
+        case "css":
+          output += ":root{\n";
+          selectedBrands.map((slug) => {
+            let brand = brands.find((brand) => brand.slug === slug);
+            brand.colors.map((color, key) => {
+              output += `--${slug}-${key}: #${color};\n`;
+            });
+          });
+          output += "}";
+          break;
+        case "scss":
+          selectedBrands.map((slug) => {
+            let brand = brands.find((brand) => brand.slug === slug);
+            brand.colors.map((color, key) => {
+              output += `$${slug}-${key}: #${color};\n`;
+            });
+          });
+          break;
+
+        default:
+          break;
+      }
+
+      const blob = new Blob([output]);
+      const url = URL.createObjectURL(blob);
+      setDownloadUrl(url);
+      return () => {
+        URL.revokeObjectURL(url);
+        setDownloadUrl("");
+      };
+    }
+  }, [selectedBrands, cssMethod]);
+
+
+  return (
+    <div className="download">
+      <div className="actions"> 
+        <select onChange={(e) => setCssMethod(e.target.value)}>
+          <option value="css">CSS</option>
+          <option value="scss">SCSS</option>
+        </select>
+        <a download={`brand.${cssMethod}`} href={downloadUrl}>
+          <GrDownload />
+        </a>
+     
+        <Link to={`/collection/${selectedBrands.join(",")}`}>
+          <GrLink />
+        </Link>
+      </div>
+
+      <div onClick={() => setSelectedBrands([])} className="selected">
+        <GrClose />
+        {selectedBrands.length} brands collected.
+      </div>
+    </div>
+  );
+};
+
+export default Downland;
